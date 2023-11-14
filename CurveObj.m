@@ -1,4 +1,4 @@
-classdef CurveObj3
+classdef CurveObj
     % Inputs:
     %   DEM - GRIDobj containing elevation raster
     %   
