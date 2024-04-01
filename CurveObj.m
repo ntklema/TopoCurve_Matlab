@@ -315,15 +315,6 @@ classdef CurveObj
             obj.CMAP.al=al;
             obj.CMAP.bl=bl;
             obj.CMAP.cl=cl;
-%         end
-%             obj.CMAP.KG2=obj.CMAP.K12.*obj.CMAP.K22;
-%              obj.CMAP.KM2=0.5.*(obj.CMAP.K12+obj.CMAP.K22);
-            %K1X=K1U; K1Y=K1V; K1Z=K1U.*SZU+K1V.*SZV;
-            %K2X=K2U; K2Y=K2V; K2Z=K2U.*SZU+K2V.*SZV;
-            %K1M = sqrt(K1X.^2+K1Y.^2+K1Z.^2);
-            %K1X = K1X./K1M; K1Y = K1Y./K1M; K1Z = K1Z./K1M;
-           % K2M = sqrt(K2X.^2+K2Y.^2+K2Z.^2);
-            %K2X = K2X./K2M; K2Y = K2Y./K2M; K2Z = K2Z./K2M;
 
             % Set K1 to 0 if |K1| < kt and set K2 to 0 if |K2| < kt. 
             K1((abs(K1)<=kt))=0; K2((abs(K2)<=kt))=0;
@@ -388,8 +379,7 @@ classdef CurveObj
             % orientation vectors
             obj.CMAP.KG=KG; obj.CMAP.KM=KM;
             obj.CMAP.K1=K1; obj.CMAP.K2=K2;
-%             obj.CMAP.K1U=K1U; obj.CMAP.K1V=K1V;
-%             obj.CMAP.K2U=K2U; obj.CMAP.K2V=K2V;
+
 
             % Store slope vectors form filtered topographic map
             [obj.DEM.GU, obj.DEM.GV]=gradient(obj.DEM.ZFilt,obj.DEM.dx, obj.DEM.dy);
@@ -408,7 +398,7 @@ classdef CurveObj
 
             p = inputParser;
             p.FunctionName = 'PlotTopo';
-            addRequired(p,'obj',@(x) isa(x,'CurveObj2'));
+            addRequired(p,'obj',@(x) isa(x,'CurveObj'));
             addParameter(p,'clipped',false)
             parse(p,obj,varargin{:});
 
@@ -497,7 +487,7 @@ classdef CurveObj
 
             p = inputParser;
             p.FunctionName = 'PlotShapes';
-            addRequired(p,'obj',@(x) isa(x,'CurveObj2'));
+            addRequired(p,'obj',@(x) isa(x,'CurveObj'));
             addParameter(p,'topocompare',false)
             addParameter(p,'shapecompare',[])
             addParameter(p,'invariants',false)
@@ -551,7 +541,7 @@ classdef CurveObj
 
 %% shapecompare plot function  
             if ~isempty(p.Results.shapecompare)
-                if isa(p.Results.shapecompare,'CurveObj2')
+                if isa(p.Results.shapecompare,'CurveObj')
 
                 count=numel(p.Results.shapecompare);
             
