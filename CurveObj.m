@@ -24,7 +24,7 @@ classdef CurveObj
     end
     
     methods
-        function obj = CurveObj3(DEM,varargin)
+        function obj = CurveObj(DEM,varargin)
             set(0,'defaultfigurecolor',[1 1 1],'defaultfigureposition',[400 250 900 750])
            if isa(DEM,'GRIDobj')
                obj.DEM=struct('FullExtent',[],'X',[],'Y',[],'Z',[],'georef',[],'dx',[],'dy',[],'DTPlane',[],'Zmn',[],'ZFilt',[],'ZDiff',[]);
@@ -35,7 +35,7 @@ classdef CurveObj
                
 
                p = inputParser;
-               p.FunctionName = 'CurveObj3';
+               p.FunctionName = 'CurveObj';
                addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));               
                addParameter(p,'clip',georef)
                addParameter(p,'location',[])
