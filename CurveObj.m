@@ -25,6 +25,9 @@ classdef CurveObj
     
     methods
         function obj = CurveObj(DEM,varargin)
+            % This function sets up data set with 2 different options: 
+            %      if DEM is part of 'GRIDobj'
+            %      if it is a 'struct'
             set(0,'defaultfigurecolor',[1 1 1],'defaultfigureposition',[400 250 900 750])
            if isa(DEM,'GRIDobj')
                obj.DEM=struct('FullExtent',[],'X',[],'Y',[],'Z',[],'georef',[],'dx',[],'dy',[],'DTPlane',[],'Zmn',[],'ZFilt',[],'ZDiff',[]);
@@ -100,7 +103,7 @@ classdef CurveObj
 
         end
 
-        function obj=SpecFilt(obj,Filter,filtertype)
+        function [obj, km]=SpecFilt(obj,Filter,filtertype)
                     % Use spectral filtering to smooth data
                     % Inputs:
                         % obj - CurveObj to be operated on
@@ -157,6 +160,7 @@ classdef CurveObj
                     xc = Lx/2+1; yc = Ly/2+1; % matrix indices of zero wavenumber
                     [cols, rows] = meshgrid(1:Lx,1:Ly); % matrices of column and row indices
                     km = sqrt((dky*(rows-yc)).^2 + (dkx*(cols-xc)).^2); % matrix of radial wavenumbers
+
                    
 %                     ZMW = ZMW .* conj(ZMW) / (Lx * Ly * zw);
                     obj.DEM.ZP=ZMW;
@@ -166,7 +170,7 @@ classdef CurveObj
 
                         case 'lowpass'
                             kfilt=1./Filter;
-                        
+
                             sigma=abs(kfilt(2)-kfilt(1))/3;
                             F=exp(-(km-kfilt(1)).^2/(2*sigma^2));
                             F=F/max(F(:));
@@ -240,71 +244,16 @@ classdef CurveObj
             K1=zeros(size(SZ)); K1U=zeros(size(SZ)); K1V=zeros(size(SZ));
             K2=zeros(size(SZ)); K2U=zeros(size(SZ)); K2V=zeros(size(SZ));
 
-            % The first and second fundamental form coefficients are used to
-            % construct two 2 by 2 matrices, I and II, which then are used to
-            % calculate the 2 by 2 shape operator matrix, SO, which then is used to
-            % calculate the principal curvature magnitudes and apparent directions.
-%             F=zeros(size(K1)); M=zeros(size(K1));
-%             for i=1:m % Loop over rows of grid points on parameter plane.
-%                 for j=1:n % Loop over columns of grid points on parameter plane.
-%                     I=[E(i,j) F(i,j);F(i,j) G(i,j)]; % Matrix of first fund. form.
-%                     II=[e(i,j) f(i,j);f(i,j) g(i,j)]; % Matrix of second fund. form.
-%                     SO=I\II; % 2 by 2 shape operator matrix: same as inv(I)*II.
-%                     A=max(max(isnan(SO))); % Test for nan elements in SO.
-%                     if A==1 % if any are nan set all elements of KD and KM to nan
-%                     KD=[NaN NaN;NaN NaN]; KM=[NaN NaN;NaN NaN];
-%                     elseif A==0 % if not nans compute eigenvalues and vectors of SO
-%                         [KD,KM]=eig(SO); % KD and KM are 2 by 2 matrices.
-%                     % Cols of KD are eigenvectors; trace of KM are eigenvalues.
-%                         if abs(KM(1,1))<abs(KM(2,2)) % Order principal curvatures so K1 > K2.
-%                             KM=rot90(KM,2); KD=fliplr(KD);
-%                         end
-%                     % KD(:,1) and KM(1,1) are eigenvector and value for K1.
-%                     % KD(:,2) and KM(2,2) are eigenvector and value for K2.
-%                     
-%                     end
-% 
-%                 % Extract principal curvature magnitudes, K1 and K2.
-% %                   K1(i,j)=KM(1,1); K2(i,j)=KM(2,2); %As in Mynatt code
-%                   K1(i,j)=-KM(1,1); K2(i,j)=-KM(2,2); % I think more consistent with convention?
-%                 
-% %                % High magnitude curvature as K1
-% %                 PC=[-KM(1,1) -KM(2,2)];  
-% %                 if PC(1)==0 && PC(2)==0
-% %                     K1(i,j)=PC(1);
-% %                     K2(i,j)=PC(2);
-% %                 end
-% %                 if PC(1)
-% %                         K1(i,j)=PC(abs(PC)==max(abs(PC)));
-% %                         K2(i,j)=PC(abs(PC)==min(abs(PC)));
-% %                 end
-% 
-%                 % Extract components of apparent principal curvature directions.
-%                 % Note: these are 2D vectors in the parameter plane which must be
-%                 % projected onto planes tangent to s for actual directions.
-%                     K1U(i,j)=KD(1,1); K1V(i,j)=KD(2,1);
-%                     K2U(i,j)=KD(1,2); K2V(i,j)=KD(2,2);
-% 
-                    obj.CMAP.A=sqrt(E.*G-F.^2);
-                    obj.CMAP.E=E; obj.CMAP.G=G; obj.CMAP.F=F;
-                    obj.CMAP.e=e; obj.CMAP.f=f; obj.CMAP.g=g;
-% 
-% 
-%                 end
-%             end
 
+            obj.CMAP.A=sqrt(E.*G-F.^2);
+            obj.CMAP.E=E; obj.CMAP.G=G; obj.CMAP.F=F;
+            obj.CMAP.e=e; obj.CMAP.f=f; obj.CMAP.g=g;
 
-%           Calculate the Principal Curvatures
-
-%             if abs(F)<Fthresh
-%                 
-% 
-%             else    
             a=E.*G-F.^2;
             b=-(g.*E-2.*f.*F+e.*G);
             c=e.*g-f.^2;
-            K1=-(-b+sqrt(abs(b.^2-4.*a.*c)))./(2.*a);
-            K2=-(-b-sqrt(abs(b.^2-4.*a.*c)))./(2.*a);
+            K2=-(-b+sqrt(abs(b.^2-4.*a.*c)))./(2.*a);
+            K1=-(-b-sqrt(abs(b.^2-4.*a.*c)))./(2.*a);
 
 %           Calculate the principal directions
             al=F.*g-G.*f;
@@ -389,7 +338,11 @@ classdef CurveObj
             obj.CMAP.K1M(abs(K1)<abs(K2))=K2(abs(K1)<abs(K2));
 
 
-            
+            [obj.CMAP.az,obj.CMAP.el,~] = cart2sph(obj.CMAP.NX,obj.CMAP.NY,obj.CMAP.NZ);
+            obj.CMAP.Sl=(tan((pi/2)-obj.CMAP.el));
+
+            CL=-del2(obj.DEM.ZFilt,obj.DEM.dx,obj.DEM.dx);
+            obj.CMAP.LP=CL;
             
         end
                 
@@ -638,14 +591,20 @@ classdef CurveObj
              D.Z=obj.DEM.ZFilt;
 %             DS=D;
 
-            D=fillsinks(D);
-            FD=FLOWobj(D,'Dinf');
+            FD1  = FLOWobj(D,'preprocess','carve','mex',true);
+            D = imposemin(FD1,D,0.0001);
+            S   = STREAMobj(FD1,'minarea',1e6/D.cellsize^2);
+            DEMc = D;
+            DEMc.Z(S.IXgrid) = DEMc.Z(S.IXgrid)-100; 
+            FD=FLOWobj(DEMc,'Dinf');
 %             FD=FLOWobj(D,'preprocess','carve');
 
-            A=flowacc(FD).*D.cellsize^2;
+            A=flowacc(FD,obj.CMAP.A).*D.cellsize^2;
+            A2=flowacc(FD).*D.cellsize^2;
             [obj.Stream.FU, obj.Stream.FV]=flowvec(FD);
             obj.Stream.S=STREAMobj(FD,A>thresh);
             obj.Stream.A=A;
+            obj.Stream.A2=A2;
             obj.DEM.Clipped=D;
             obj.Stream.SGRID=STREAMobj2GRIDobj(obj.Stream.S);
             obj.Stream.G=gradient8(D);
