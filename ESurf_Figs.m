@@ -1,4 +1,12 @@
-% Code written by Nathaniel Klema
+% Code written by Nathaniel Klema to accompany 
+
+% Klema, N., Karlstrom, L., and Roering, J.: Discrete differential geometry 
+% of fluvial landscapes, EGUsphere [preprint], 
+% https://doi.org/10.5194/egusphere-2025-4431, 2025
+
+% All uses of this code should cite this manuscript.  Questions can be
+% directed to ntklema@fortlewis.edu
+
 
 % Load filepath of script.  DEM and plotting functions should be stored
 % in a sub directory in the same folder.
