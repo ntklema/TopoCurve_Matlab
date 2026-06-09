@@ -2,7 +2,7 @@ function PE = LPError_Slope_Bin(C,S,BS,nb)
 in=find(BS.Z==1);
 
 PE=(C.CMAP.LP.*2-C.CMAP.KM)./(C.CMAP.KM).*100.*BS.Z;
-b=BIN(C.CMAP.Sl(in),PE(in),nb);
+b=bin(C.CMAP.Sl(in),PE(in),nb);
 x=b(:,1);
 y=b(:,3);
 se=b(:,7)./2;

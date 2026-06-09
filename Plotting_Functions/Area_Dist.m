@@ -1,6 +1,6 @@
 function Area_Dist(BD,varargin)
     % Creates stacked plot of curvature metrics binned by area with side by
-    % side shape class map.
+    % side shape class map.29
     
 
     % Define shape class color map

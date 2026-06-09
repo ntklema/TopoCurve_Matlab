@@ -1,0 +1,11 @@
+function Slope_Compare(C,bn)
+DEM=C.DEMGRIDobj;
+DEM.Z=C.DEM.ZFilt;
+
+G=gradient(DEM.Z,C.DEM.dx,C.DEM.dx);
+G8=gradient8(DEM);
+Sl=C.CMAP.Sl;
+
+
+
+end

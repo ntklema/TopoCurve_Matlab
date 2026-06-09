@@ -1,4 +1,4 @@
-classdef CurveObj
+  classdef CurveObj
     % Inputs:
     %   DEM - GRIDobj containing elevation raster
     %   
@@ -20,6 +20,8 @@ classdef CurveObj
         kt
         Filter
         Stream
+        Area_Binned_Metrics
+        ROI_Logical_Grid
         
     end
     
@@ -261,9 +263,9 @@ classdef CurveObj
             cl=E.*f-F.*e;
             obj.CMAP.V1=(-bl+sqrt(bl.^2-4.*al.*cl))./(2.*al);
             obj.CMAP.V2=(-bl-sqrt(bl.^2-4.*al.*cl))./(2.*al);
-            obj.CMAP.al=al;
-            obj.CMAP.bl=bl;
-            obj.CMAP.cl=cl;
+            % obj.CMAP.al=al;
+            % obj.CMAP.bl=bl;
+            % obj.CMAP.cl=cl;
 
             % Set K1 to 0 if |K1| < kt and set K2 to 0 if |K2| < kt. 
             K1((abs(K1)<=kt))=0; K2((abs(K2)<=kt))=0;
@@ -334,16 +336,175 @@ classdef CurveObj
             [obj.DEM.GU, obj.DEM.GV]=gradient(obj.DEM.ZFilt,obj.DEM.dx, obj.DEM.dy);
 
             % Store principal Curvatures sorted by magnitude
-            obj.CMAP.K1M=K1; obj.CMAP.K2M=K2;
-            obj.CMAP.K1M(abs(K1)<abs(K2))=K2(abs(K1)<abs(K2));
+            % obj.CMAP.K1M=K1; obj.CMAP.K2M=K2;
+            % obj.CMAP.K1M(abs(K1)<abs(K2))=K2(abs(K1)<abs(K2));
 
 
             [obj.CMAP.az,obj.CMAP.el,~] = cart2sph(obj.CMAP.NX,obj.CMAP.NY,obj.CMAP.NZ);
             obj.CMAP.Sl=(tan((pi/2)-obj.CMAP.el));
 
-            CL=-del2(obj.DEM.ZFilt,obj.DEM.dx,obj.DEM.dx);
-            obj.CMAP.LP=CL;
+            obj.CMAP.LP=-del2(obj.DEM.ZFilt,obj.DEM.dx,obj.DEM.dx);
+         
             
+        end
+
+        function [obj,BS] = bindata(obj,bs,nb)
+
+            % generate a data structure holding binned topographic geometry
+            % metrics.
+        
+            % C - CurveObj with curvatures calculated
+            % bs - Shapefile of ROI where metrics will be evaluated
+            % nb - number of bins
+        
+            A=log10(obj.Stream.A.Z);
+            BS = polygon2GRIDobj(obj.DEMGRIDobj,bs);
+            in = find(BS.Z==1);
+        
+            % define vector of area values
+            av = linspace(min(A(in)),max(A(in)),nb+1);
+            
+            for i = 1:nb
+                ain = find(BS.Z==1 & A>=av(i) & A< av(i+1));
+                a(i) = mean([av(i),av(i+1)]); % Upstream area
+                km(i) = mean(obj.CMAP.KM(ain)); % Mean curavture
+                lp(i) = mean(obj.CMAP.LP(ain)); % Laplacian curvature
+                kg(i) = mean(obj.CMAP.KG(ain)); % Gaussian curvature
+                k1(i) = mean(obj.CMAP.K1(ain)); % First Principal curvature
+                k2(i) = mean(obj.CMAP.K2(ain)); % Second Principal curvature
+                alpha(i) = mean(obj.CMAP.A(ain)); % Area expansion
+                sl(i) = mean(obj.CMAP.Sl(ain));   % Tangent Slope
+                az(i) = mean(obj.CMAP.az(ain)); % Azimuth
+                p_a(i) = numel(ain)/numel(find(BS.Z==1)); % Drainage area pdf
+                S = obj.SMAP(ain);
+                p_b(i) = numel(find(S==3))/numel(ain); % Basin probability
+                p_d(i) = numel(find(S==-3))/numel(ain); % Dome probability
+                p_as(i) = numel(find(S==-2))/numel(ain); % Antiformal saddle probability
+                p_ss(i) = numel(find(S==2))/numel(ain); % Synformal saddle probability
+        
+                      
+            end
+        
+            BD = struct('area',a,'KM',km,'KG',kg,'K1',k1,'K2',k2,'A',alpha,'Sl',sl,'Az',az, ...
+                'P_a',p_a,'P_b',p_b,'P_d',p_d,'P_as',p_as,'P_ss',p_ss,'LP',lp);
+
+            obj.Area_Binned_Metrics=BD;
+            obj.ROI_Logical_Grid=BS;
+        end
+
+        function Area_Dist(obj,varargin)
+            % Creates stacked plot of curvature metrics binned by area with side by
+            % side shape class map.29
+            
+        
+            p = inputParser;
+            p.FunctionName = 'Area_Dist';
+            addRequired(p,'obj',@(x) isa(x,'CurveObj'));
+            addParameter(p,'save',false)
+            addParameter(p,'Area_Range',[])
+            addParameter(p,'fig_name',{})
+            parse(p,obj,varargin{:});
+            
+            BD = obj.Area_Binned_Metrics;
+        
+            % Define shape class color map
+            cmap=[0.4,0,0;
+            1,0,0;
+            1,1,1;
+            1,1,1;
+            0,1,1;
+            0,0,1];
+            fontl = 14; % fontsize of labels
+            fontt = 12; % fontsize of labels
+        
+            smwin=10;
+            f1=figure; hold on
+            f1.Units = 'inches';
+            f1.Position=[3 3 5.5 9];
+            
+            t1 =  tiledlayout(3,1,'TileSpacing','Compact');
+            nexttile(t1) % Plot Area pdf
+            area(10.^BD.area,smoothdata(BD.P_a.*100,'gaussian',smwin)); hold on
+            ylabel('Area PDF (%)','FontName','helvetica','fontsize',fontl,'Color','k')
+            set(gca,'xscale','log','xticklabels',[],'xlim',[10.^2 10.^7.3],'ylim',[0 7],'FontSize',fontt)
+            yyaxis('right')
+            plot(10.^BD.area,smoothdata(BD.Sl,'gaussian',smwin),'Color','k','LineWidth',2,'LineStyle','--')
+            set(gca,'xscale','log','xticklabels',[],'xlim',[10.^2 10.^7.3],'ylim',[0 0.8],'FontSize',fontt,'YColor','k')
+            
+            ylabel('Slope (m/m)','FontName','helvetica','fontsize',fontl,'Color','k')
+        
+            if ~isempty(p.Results.Area_Range)
+                fill([1e2 1e2 p.Results.Area_Range(1) p.Results.Area_Range(1)],[0 8 8 0],'w','FaceAlpha',0.9,'Linestyle','none')
+                fill([p.Results.Area_Range(2) p.Results.Area_Range(2) 10^7.3 10^7.3],[0 8 8 0],'w','FaceAlpha',0.9,'Linestyle','none')
+                fill([p.Results.Area_Range(1) p.Results.Area_Range(1) p.Results.Area_Range(2) p.Results.Area_Range(2)],[0 8 8 0],...
+                    'w','FaceAlpha',0,'Linestyle','-','EdgeColor','k','LineWidth',2)
+            else
+            end
+        
+            
+            nexttile(t1) % Mean and Gaussian Curvature plots
+            yyaxis('left')
+            kg=plot(10.^BD.area,smoothdata(BD.KG,'gaussian',smwin),'color',[0.2 0.4 0],'LInewidth',2); hold on
+            yline(0)
+            set(gca,'ylim',[-1.5e-5 1.5e-5],'YColor',[0.2 0.4 0],'FontSize',fontt)
+            ylabel('Gaussian Curv.','FontName','helvetica','fontsize',fontl,'Color','k')
+            
+            
+            yyaxis('right')
+            km = plot(10.^BD.area,smoothdata(BD.KM,'gaussian',smwin),'color',[0.4 0 0.6],'LInewidth',2,'LineStyle','--'); hold on
+            lp = plot(10.^BD.area,smoothdata(BD.LP./2,'gaussian',smwin),'color','k','Linewidth',1,'LineStyle','-'); hold on
+            set(gca,'xscale','log','xticklabels',[],'xlim',[10.^2 10.^7.3],'ylim',[-8e-3 8e-3],'YColor',[0.4 0 0.6],'FontSize',fontt)
+            ylabel('Mean Curv.','FontName','helvetica','fontsize',fontl,'Color','k')
+            legend([kg,km,lp],{'K_G','K_M','LP'},'location','northeast')
+        
+            if ~isempty(p.Results.Area_Range)
+                fill([1e2 1e2 p.Results.Area_Range(1) p.Results.Area_Range(1)],[-6.5e-3 6.5e-3 6.5e-3 -6.5e-3],'w','FaceAlpha',0.9,'Linestyle','none')
+                fill([p.Results.Area_Range(2) p.Results.Area_Range(2) 10^7.3 10^7.3],[-6.5e-3 6.5e-3 6.5e-3 -6.5e-3],'w','FaceAlpha',0.9,'Linestyle','none')
+                fill([p.Results.Area_Range(1) p.Results.Area_Range(1) p.Results.Area_Range(2) p.Results.Area_Range(2)],[-6.5e-3 6.5e-3 6.5e-3 -6.5e-3],...
+                    'w','FaceAlpha',0,'Linestyle','-','EdgeColor','k','LineWidth',2)
+        
+            else
+            end
+            
+        
+            nexttile(t1) % Shape Class distribution plot
+            fill([0 1e3],[1 1],'r'); hold on
+            bp=BD.P_b; bp(bp>1)=1;
+            bd=BD.P_d; bd(bd>1)=1;
+            bss=BD.P_ss; bss(bss>1)=1;
+            bas=BD.P_as; bas(bas>1)=1;
+            b = plot(10.^BD.area,smoothdata(bp,'gaussian',smwin),'color',cmap(6,:),'LineWidth',2); hold on
+            d = plot(10.^BD.area,smoothdata(bd,'gaussian',smwin),'color',cmap(1,:),'LineWidth',2); hold on
+            ss = plot(10.^BD.area,smoothdata(bss,'gaussian',smwin),'color',cmap(5,:),'LineWidth',2); hold on
+            as = plot(10.^BD.area,smoothdata(bas,'gaussian',smwin),'color',cmap(2,:),'LineWidth',2); hold on
+            
+            if ~isempty(p.Results.Area_Range)
+                fill([1e2 1e2 p.Results.Area_Range(1) p.Results.Area_Range(1)],[0 1 1 0],'w','FaceAlpha',0.9,'Linestyle','none')
+                fill([p.Results.Area_Range(2) p.Results.Area_Range(2) 10^7.3 10^7.3],[0 1 1 0],'w','FaceAlpha',0.9,'Linestyle','none')
+                fill([p.Results.Area_Range(1) p.Results.Area_Range(1) p.Results.Area_Range(2) p.Results.Area_Range(2)],[0 1 1 0],...
+                    'w','FaceAlpha',0,'Linestyle','-','EdgeColor','k','LineWidth',2)
+            else
+            end
+        
+        
+            set(gca,'xscale','log','xlim',[10.^2 10.^7.3],'FontSize',fontt,'ylim',[0 1])
+            xlabel('Upstream Drainage Area (m^2)','FontName','helvetica','fontsize',fontl)
+            ylabel('P(C|A)','FontName','helvetica','fontsize',fontl)
+            legend([b,ss,as,d],{'B','SS','AS','D'},'location','southeast')
+        
+            if p.Results.save == 1
+                if isempty(p.Results.fig_name)
+                    saveas(gcf,'Area_Dist.pdf')
+                else
+                    saveas(gcf,strcat(p.Results.fig_name,'.pdf'))
+                end
+            end
+        
+            
+        
+        
+        
+        
         end
                 
         function TopoPlot(obj,varargin)
@@ -611,8 +772,6 @@ classdef CurveObj
             obj.Stream.so=streamorder(obj.Stream.S,'strahler');
             CL=-del2(obj.DEM.ZFilt,obj.DEM.dx,obj.DEM.dx);
             obj.CMAP.LP=CL;
-            C=curvature(D);
-            obj.CMAP.TT=C.Z;
         end
     
         function obj=StreamExt(obj)

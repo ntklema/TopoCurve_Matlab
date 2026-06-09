@@ -1,6 +1,5 @@
 function Scale_Comparison(Stack,LogArea,BS,nb)
-%UNTITLED6 Summary of this function goes here
-%   Detailed explanation goes here
+% depends on the bin function % Copyright (C) 2004-2010 Taylor Perron <perron@mit.edu>
 [~,~,n]=size(Stack.K1);
 smwin=10;
 figure; hold on
