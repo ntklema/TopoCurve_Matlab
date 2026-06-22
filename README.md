@@ -1,6 +1,6 @@
 This code was used to generate the results presented in 
 
-Klema, N., Karlstrom, L., and Roering, J.: Discrete differential geometry of fluvial landscapes, EGUsphere [preprint], https://doi.org/10.5194/egusphere-2025-4431, 2025
+Klema, N., Karlstrom, L., and Roering, J.: Discrete differential geometry of fluvial landscapes, https://doi.org/10.5194/egusphere-2025-4431, 2025
 
 The code uses a formal surface theory approach to calculate geometry metrics on gridded DEMs that are not sensative to projection distortion.
 
