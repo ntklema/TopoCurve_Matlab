@@ -34,8 +34,8 @@
            if isa(DEM,'GRIDobj')
                obj.DEM=struct('FullExtent',[],'X',[],'Y',[],'Z',[],'georef',[],'dx',[],'dy',[],'DTPlane',[],'Zmn',[],'ZFilt',[],'ZDiff',[]);
                
-               X=DEM.georef.SpatialRef.XWorldLimits;
-               Y=DEM.georef.SpatialRef.YWorldLimits;
+               X=DEM.georef.XWorldLimits;
+               Y=DEM.georef.YWorldLimits;
                georef=[X,Y];
                
 

@@ -11,4 +11,8 @@ can be added through the built in MATLAB package manager.
 
 The package also uses the bin.m function (Copyright (C) 2004-2010 Taylor Perron <perron@mit.edu) which is part of the 2DSpecTools package.  The full 2DSpecTools package can be downloaded from https://taylorperron.org/publications/. 
 
+The most recent version of this software package can be found at https://github.com/ntklema/TopoCurve_Matlab
+
 Please reach out to ntklema@fortlewis.edu with questions.
+
+Schwanghart, W., Scherler, D. (2014). TopoToolbox 2 – MATLAB-based software for topographic analysis and modeling in Earth surface sciences. Earth Surface Dynamics, 2(1), 1-7. doi: 10.5194/esurf-2-1-2014
