@@ -1,0 +1,14 @@
+function [Out] = Slab_Project(grid,shape,angle,velocity)
+%UNTITLED Summary of this function goes here
+%   Detailed explanation goes here
+arguments (Input)
+    grid GRIDobj
+    shape struct
+end
+
+S=polygon2GRIDobj(DEM,shape);
+[X,Y]=getcoordinates(DEM,'matrix')
+
+outputArg1 = inputArg1;
+outputArg2 = inputArg2;
+end
