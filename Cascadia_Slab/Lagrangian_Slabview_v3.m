@@ -42,23 +42,78 @@ TS_Poly=shaperead('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege
 
 Out=Slab_Project(CAS,TS_Poly,90-52,40e-3);
 
+
 %% Make depth swath plot
 FS.Z(FS.Z<CAS.Z)=CAS.Z(FS.Z<CAS.Z);
+DEMr=resample(DEM,CAS);
 dist=Out.dist.Z;
-cmap=(colormap(copper(5)));
+n=5;
+cmap=(colormap(copper(n)));
 
 time=Out.time.Z;
-d=[0 2e4];
+d=[0,0,2e4,4e4,6e4,8e4,10e4];
 
-in=find(and(and(dist>d(1),dist<d(2)),~isnan(CAS.Z)));
+nb=100;
+f1=figure; hold on
+set(f1,'units','inches','Position',[3,3,18,10],'color','w')
 
-b=bin(Out.trench_y(in),CAS.Z(in),200);
-b2=bin(Out.trench_y(in),FS.Z(in),200);
 
-figure
-plot(b(:,1),b(:,8)); hold on
-plot(b2(:,1),b2(:,8));
 
+for i=1:n
+
+    if i==1
+        in=find(and(and(dist>2500,dist<=5000),~isnan(CAS.Z)));
+        bc=bin(Out.trench_y(in),Out.trench_x(in),nb);
+        b=bin(Out.trench_y(in),CAS.Z(in),nb);
+        b2=bin(Out.trench_y(in),FS.Z(in),nb);
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+
+
+        toc=b(:,8)';
+        fs=b2(:,8)';
+        nin=find(toc~=0);
+        toc=smoothdata(toc(nin),'gaussian',5)./1e3;
+        fs=smoothdata(fs(nin),'gaussian',5)./1e3;
+        fill([lat(nin) fliplr(lat(nin))],[toc fliplr(fs)],cmap(i,:),'FaceAlpha',0.8); hold on
+        plot(lat(nin),toc,'k','LineWidth',1); 
+        plot(lat(nin),fs,'k','LineWidth',1)
+        
+        [X,Y]=getcoordinates(DEMr,'matrix');
+        in=find(Out.S.Z==1);
+        b=bin(Y(in),DEMr.Z(in),nb);
+        bc=bin(Y(in),X(in),nb);
+
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+        plot(lat,smoothdata(b(:,2)./1e3,'gaussian',3),'k','LineWidth',4)
+
+    else
+        in=find(and(and(dist>d(i),dist<=d(i+1)),~isnan(CAS.Z)));
+        
+        bc=bin(Out.trench_y(in),Out.trench_x(in),nb);
+        b=bin(Out.trench_y(in),CAS.Z(in),nb);
+        b2=bin(Out.trench_y(in),FS.Z(in),nb);
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+    
+        
+        toc=b(:,8)';
+        fs=b2(:,8)';
+        nin=find(toc~=0);
+        toc=smoothdata(toc(nin),'gaussian',5)./1e3;
+        fs=smoothdata(fs(nin),'gaussian',5)./1e3;
+        fill([lat(nin) fliplr(lat(nin))],[toc fliplr(fs)],cmap(i,:),'FaceAlpha',0.8); 
+        plot(lat(nin),toc,'k','LineWidth',1); 
+        plot(lat(nin),fs,'k','LineWidth',1)
+    end
+end
+
+% Annotation for CFTB
+an_height=-4;
+plot([45,48.3],[an_height an_height],'k','LineWidth',1)
+plot([45 45],[an_height-0.2 an_height+0.2],'k','LineWidth',1)
+plot([48.3 48.3],[an_height-0.2 an_height+0.2],'k','LineWidth',1)
+text(45.4,an_height+0.4,'Cascadia Fold-Thrust Belt','FontSize',14)
+
+xlim([42,49])
 %% Time binning plot
 Diff=CAS;
 Diff.Z=FS.Z-CAS.Z;
