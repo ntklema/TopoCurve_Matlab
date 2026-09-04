@@ -6,14 +6,18 @@ FS=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Resear
 
 BG=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Gravity/Bouguer_UTM10m2.tif');
 
+domainx=CAS.georef.XWorldLimits;
+domainy=CAS.georef.YWorldLimits;
 % DEM=resample(DEM,BG,'bilinear');
-% FS = resample(FS, DEM, 'bilinear');
-% CAS = resample(CAS, DEM, 'bilinear');
+% FS = resample(FS, S2, 'bilinear');
+% CAS = resample(CAS, S2, 'bilinear');
 
 % 
 % FS=resample(FS,DEM,'bilinear');
 % CAS=resample(CAS,DEM,'bilinear');
 % S2 = GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Slab2_UTM10N.tif');
+% CAS = resample(CAS, S2, 'bilinear');
+% FS = resample(FS, S2, 'bilinear');
 % S2=resample(S2,DEM,'bilinear');
 % 
 % D=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Dip_Slab2_UTM10N.tiff');
@@ -42,7 +46,6 @@ TS_Poly=shaperead('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege
 
 Out=Slab_Project(CAS,TS_Poly,90-52,40e-3);
 
-
 %% Make depth swath plot
 FS.Z(FS.Z<CAS.Z)=CAS.Z(FS.Z<CAS.Z);
 DEMr=resample(DEM,CAS);
@@ -58,11 +61,12 @@ f1=figure; hold on
 set(f1,'units','inches','Position',[3,3,18,10],'color','w')
 
 
-
+Th=[];
+subplot(2,3,[1,2,4,5])
 for i=1:n
 
     if i==1
-        in=find(and(and(dist>2500,dist<=5000),~isnan(CAS.Z)));
+        in=find(and(and(dist>2500,dist<=11000),~isnan(CAS.Z)));
         bc=bin(Out.trench_y(in),Out.trench_x(in),nb);
         b=bin(Out.trench_y(in),CAS.Z(in),nb);
         b2=bin(Out.trench_y(in),FS.Z(in),nb);
@@ -74,19 +78,21 @@ for i=1:n
         nin=find(toc~=0);
         toc=smoothdata(toc(nin),'gaussian',5)./1e3;
         fs=smoothdata(fs(nin),'gaussian',5)./1e3;
+
         fill([lat(nin) fliplr(lat(nin))],[toc fliplr(fs)],cmap(i,:),'FaceAlpha',0.8); hold on
         plot(lat(nin),toc,'k','LineWidth',1); 
         plot(lat(nin),fs,'k','LineWidth',1)
         
-        [X,Y]=getcoordinates(grid,'matrix');
+        [X,Y]=getcoordinates(DEMr,'matrix');
         in=find(Out.S.Z==1);
         b=bin(Y(in),DEMr.Z(in),nb);
-        b=bin(Y(in),X(in),nb);
+        bc=bin(Y(in),X(in),nb);
 
         [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
-        plot(lat,b(:,2)./1e3,'k','LineWidth',2)
+        plot(lat,smoothdata(b(:,2)./1e3,'gaussian',3),'k','LineWidth',4)
 
     else
+
         in=find(and(and(dist>d(i),dist<=d(i+1)),~isnan(CAS.Z)));
         
         bc=bin(Out.trench_y(in),Out.trench_x(in),nb);
@@ -100,66 +106,161 @@ for i=1:n
         nin=find(toc~=0);
         toc=smoothdata(toc(nin),'gaussian',5)./1e3;
         fs=smoothdata(fs(nin),'gaussian',5)./1e3;
+
         fill([lat(nin) fliplr(lat(nin))],[toc fliplr(fs)],cmap(i,:),'FaceAlpha',0.8); 
         plot(lat(nin),toc,'k','LineWidth',1); 
         plot(lat(nin),fs,'k','LineWidth',1)
+        xlabel('Latitude (^\circN)')
+        ylabel('Depth (km)')
     end
 end
 
+% Annotation for CFTB
+an_height=-4;
+plot([45,48.3],[an_height an_height],'k','LineWidth',1)
+plot([45 45],[an_height-0.2 an_height+0.2],'k','LineWidth',1)
+plot([48.3 48.3],[an_height-0.2 an_height+0.2],'k','LineWidth',1)
+text(45.4,an_height+0.4,'Cascadia Fold-Thrust Belt','FontSize',14)
+
+annotation('textarrow',[0.28 0.308], [0.9 0.88], ...
+    'String', 'Astoria Fan  ', 'FontSize', 14);
+annotation('textarrow',[0.45 0.41], [0.92 0.88], ...
+    'String', ' Nitinat Fan', 'FontSize', 14);
+set(gca,'fontsize', 14)
+ylim([-15 -1])
+xlim([42,49.8])
+
+% Time Binning Plot
+% in=find(and(~isnan(Out.time.Z),~isnan(CAS.Z)));
+% bt=bin(Out.time.Z(in),FS.Z(in)-CAS.Z(in),20);
+% 
+% subplot(2,3,6)
+% scatter(bt(:,1),bt(:,2))
 
 
-%% Time binning plot
-Diff=CAS;
-Diff.Z=FS.Z-CAS.Z;
-Diff.Z(Diff.Z<0)=0;
+%% Gravity 
+BG=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Gravity/Bouguer_UTM10m2.tif');
+BG=crop(BG,domainx,domainy);
+Out_G=Slab_Project(BG,TS_Poly,90-52,40e-3);
 
-T=Out.time.Z;
-N=Out.trench_y;
+%%
 
-nb=13;
+dist=Out_G.dist.Z;
+n=5;
+cmap=(colormap(copper(n)));
 
-tv=linspace(0,1.5e6,nb);
-nv=linspace(4.6e6,5.5e6,nb);
-t=[];
-v=[];
-n=[];
-for i=1:numel(tv)-1
-    t(i)=mean([tv(i),tv(i+1)]);
-    for j=1:numel(nv)-1
-        in=find(and(and(and(T>tv(i),T<=tv(i+1)),and(N>nv(j),N<=nv(j+1))),~isnan(Diff.Z)));
-        n(j)=mean([nv(j),nv(j+1)]);
+time=Out_G.time.Z;
+d=[0,0,2e4,4e4,6e4,8e4,10e4];
 
-    
-    v(i,j)=sum(Diff.Z(in))/numel(in);
+nb=100;
+f1=figure; hold on
+set(f1,'units','inches','Position',[3,3,18,10],'color','w')
+
+
+Th=[];
+subplot(2,3,[1,2,4,5]); hold on
+for i=1:n
+
+    if i==1
+        in=find(and(and(dist>2500,dist<=5000),~isnan(BG.Z)));
+        bc=bin(Out_G.trench_y(in),Out_G.trench_x(in),nb);
+        b=bin(Out_G.trench_y(in),BG.Z(in),nb);
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+
+
+        g=b(:,2)';
+
+        nin=find(g~=0);
+        g=smoothdata(g(nin),'gaussian',5);
+
+        % fill([lat(nin) fliplr(lat(nin))],[g_min(nin) fliplr(g_max(nin))],cmap(i,:),'FaceAlpha',0.8); hold on
+        plot(lat(nin),g,'k','LineWidth',1); 
+
+
+    else
+
+        in=find(and(and(dist>d(i),dist<=d(i+1)),~isnan(BG.Z)));
+
+        bc=bin(Out_G.trench_y(in),Out_G.trench_x(in),nb);
+        b=bin(Out_G.trench_y(in),BG.Z(in),nb);
+
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+
+
+        g=b(:,2)';
+
+        nin=find(g~=0);
+        g=smoothdata(g(nin),'gaussian',5);
+   
+
+       
+        plot(lat(nin),g,'k','LineWidth',1); 
+
+        xlabel('Latitude (^\circN)')
+        ylabel('Depth (km)')
     end
 end
-[lat,~]=projinv(projcrs(26910), ones(size(n)).*4e5, n);
 
-figure
-subplot(2,2,3)
-imagesc(lat,t,v)
+%% Slab 2.0
+S2=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/KM_UTM10N.tiff');
+S2=crop(S2,domainx,domainy);
+Out_S=Slab_Project(S2,TS_Poly,90-52,40e-3);
 
-t_v=[];
-r_nan=[];
-l_v=[];
-c_nan=[];
 
-for i=1:nb-1
-    data1=v(i,:);
-    t_v(i)=sum(data1,'omitnan')/sum(~isnan(data1));
-    r_nan(i)=sum(~isnan(data1));
-    
-    data2=v(:,i);
-    l_v(i)=sum(data2,'omitnan')/sum(~isnan(data2));
-    c_nan(i)=sum(~isnan(data2));
+%%
+dist=Out_S.dist.Z;
+n=5;
+cmap=(colormap(copper(n)));
+
+time=Out_S.time.Z;
+d=[0,0,2e4,4e4,6e4,8e4,10e4];
+
+nb=100;
+f1=figure; hold on
+set(f1,'units','inches','Position',[3,3,18,10],'color','w')
+
+
+Th=[];
+subplot(2,3,[1,2,4,5]); hold on
+for i=2
+
+    if i==1
+        in=find(and(and(dist>2500,dist<=11000),~isnan(S2.Z)));
+        % bc=bin(Out_S.trench_y(in),Out_S.trench_x(in),nb);
+        b=bin(Out_S.trench_y(in),S2.Z(in),nb);
+        % [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+
+
+        s2=b(:,8)';
+        
+
+        nin=find(s2~=0);
+        s2=smoothdata(s2(nin),'gaussian',5);
+
+        % fill([lat(nin) fliplr(lat(nin))],[g_min(nin) fliplr(g_max(nin))],cmap(i,:),'FaceAlpha',0.8); hold on
+        plot(lat(nin),s2,'k','LineWidth',1); 
+
+
+    else
+
+        in=find(and(and(dist>d(i),dist<=d(i+1)),~isnan(S2.Z)));
+
+        bc=bin(Out_S.trench_y(in),Out_S.trench_x(in),nb);
+        b=bin(Out_S.trench_y(in),S2.Z(in),nb);
+
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+
+
+        s2=b(:,8)';
+
+        nin=find(s2~=0);
+        s2=smoothdata(s2(nin),'gaussian',5);
+
+
+
+        plot(lat(nin),s2,'k','LineWidth',1); 
+
+        xlabel('Latitude (^\circN)')
+        ylabel('Depth (km)')
+    end
 end
-
-subplot(2,2,1)
-plot(lat,l_v)
-yyaxis('right')
-plot(lat,c_nan)
-
-subplot(2,2,4)
-plot(t,t_v)
-yyaxis('right')
-plot(t,r_nan)
