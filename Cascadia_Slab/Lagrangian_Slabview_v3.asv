@@ -88,7 +88,7 @@ for i=1:n
         b=bin(Y(in),DEMr.Z(in),nb);
         bc=bin(Y(in),X(in),nb);
 
-        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+        [lat, lon] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
         plot(lat,smoothdata(b(:,2)./1e3,'gaussian',3),'k','LineWidth',4)
 
     else
@@ -137,7 +137,43 @@ xlim([42,49.8])
 % subplot(2,3,6)
 % scatter(bt(:,1),bt(:,2))
 
+%% make Time history plot
+nb=21;
+tv=linspace(0,2.5e6,nb);
+dt=tv(2)-tv(1);
+t=[];
+diff=[];
+d_25=[];
+[~, n1, ~] = deg2utm(42, 127);
+[~, n2, ~] = deg2utm(45.5, 127);
+[~, n3, ~] = deg2utm(49, 127);
 
+for i=1:nb-1
+    t(i)=mean([tv(i), tv(i+1)]);
+    in=find(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)));
+    in2=find(and(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)),and(Out.trench_y>n1,Out.trench_y<=n2)));
+    in3=find(and(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)),and(Out.trench_y>n2,Out.trench_y<=n3)));
+    % diff(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*40e-3*1.5*1000;
+    % diff_s(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*40e-3*1.5*1000;
+    % diff_n(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*40e-3*1.5*1000;
+
+    diff(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*1e-3*40e-6;
+    diff_s(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*1e-3*40e-6;
+    diff_n(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*1e-3*40e-6;
+
+end
+
+figure; hold on
+% plot(t,d_25)
+% plot(t,d_75)
+t=t/1e6;
+plot(t,diff,'LineWidth',2)
+plot(t,diff_s,'LineWidth',2)
+plot(t,diff_n,'LineWidth',2)
+
+xlabel('Time before present (Ma)')
+ylabel('Average subducted volume (km^3/km/yr)')
+legend('Full trench: 41^\circ - 49^\circ N',"Southern segment: ")
 %% Gravity 
 BG=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Gravity/Bouguer_UTM10m2.tif');
 BG=crop(BG,domainx,domainy);
@@ -202,12 +238,16 @@ for i=1:n
 end
 
 %% Slab 2.0
-S2=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/KM_UTM10N.tiff');
+S2 = GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Slab2_UTM10N.tif');
 S2=crop(S2,domainx,domainy);
 Out_S=Slab_Project(S2,TS_Poly,90-52,40e-3);
 
 
 %%
+
+K2=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Slab2_K2.tif');
+S2=crop(K2,domainx,domainy);
+
 dist=Out_S.dist.Z;
 n=5;
 cmap=(colormap(copper(n)));
@@ -222,16 +262,18 @@ set(f1,'units','inches','Position',[3,3,18,10],'color','w')
 
 Th=[];
 subplot(2,3,[1,2,4,5]); hold on
-for i=2
+for i=3
 
     if i==1
         in=find(and(and(dist>2500,dist<=11000),~isnan(S2.Z)));
-        % bc=bin(Out_S.trench_y(in),Out_S.trench_x(in),nb);
+        bc=bin(Out_S.trench_y(in),Out_S.trench_x(in),nb);
         b=bin(Out_S.trench_y(in),S2.Z(in),nb);
-        % [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
 
 
-        s2=b(:,8)';
+        s2=b(:,2)';
+        
+        
         
 
         nin=find(s2~=0);
@@ -251,9 +293,9 @@ for i=2
         [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
 
 
-        s2=b(:,8)';
+        s2=b(:,2)';
 
-        nin=find(s2~=0);
+        nin=find(and(s2~=0,~isnan(s2)));
         s2=smoothdata(s2(nin),'gaussian',5);
 
 

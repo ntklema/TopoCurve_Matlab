@@ -88,7 +88,7 @@ for i=1:n
         b=bin(Y(in),DEMr.Z(in),nb);
         bc=bin(Y(in),X(in),nb);
 
-        [lat, ~] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
+        [lat, lon] = projinv(projcrs(26910), bc(:,2)', bc(:,1)');
         plot(lat,smoothdata(b(:,2)./1e3,'gaussian',3),'k','LineWidth',4)
 
     else
@@ -120,11 +120,11 @@ an_height=-4;
 plot([45,48.3],[an_height an_height],'k','LineWidth',1)
 plot([45 45],[an_height-0.2 an_height+0.2],'k','LineWidth',1)
 plot([48.3 48.3],[an_height-0.2 an_height+0.2],'k','LineWidth',1)
-text(45.4,an_height+0.4,'Cascadia Fold-Thrust Belt','FontSize',14)
+text(45.6,an_height+0.4,'Cascadia Fold-Thrust Belt','FontSize',14)
 
-annotation('textarrow',[0.28 0.308], [0.9 0.88], ...
+annotation('textarrow',[0.3 0.36], [0.9 0.86], ...
     'String', 'Astoria Fan  ', 'FontSize', 14);
-annotation('textarrow',[0.45 0.41], [0.92 0.88], ...
+annotation('textarrow',[0.53 0.51], [0.90 0.865], ...
     'String', ' Nitinat Fan', 'FontSize', 14);
 set(gca,'fontsize', 14)
 ylim([-15 -1])
@@ -137,7 +137,85 @@ xlim([42,49.8])
 % subplot(2,3,6)
 % scatter(bt(:,1),bt(:,2))
 
+%% make Time history plot v1
+nb=21;
+tv=linspace(0,2.5e6,nb);
+dt=tv(2)-tv(1);
+t=[];
+diff=[];
+d_25=[];
+[~, n1, ~] = deg2utm(42, 127);
+[~, n2, ~] = deg2utm(45.5, 127);
+[~, n3, ~] = deg2utm(49, 127);
 
+for i=1:nb-1
+    t(i)=mean([tv(i), tv(i+1)]);
+    in=find(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)));
+    in2=find(and(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)),and(Out.trench_y>n1,Out.trench_y<=n2)));
+    in3=find(and(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)),and(Out.trench_y>n2,Out.trench_y<=n3)));
+    % diff(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*40e-3*1.5*1000;
+    % diff_s(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*40e-3*1.5*1000;
+    % diff_n(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*40e-3*1.5*1000;
+
+    diff(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*1e-3*40e-6;
+    diff_s(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*1e-3*40e-6;
+    diff_n(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*1e-3*40e-6;
+
+end
+
+figure; hold on
+% plot(t,d_25)
+% plot(t,d_75)
+t=t/1e6;
+plot(t,diff,'LineWidth',2)
+plot(t,diff_s,'LineWidth',2)
+plot(t,diff_n,'LineWidth',2)
+
+xlabel('Time before present (Ma)')
+ylabel('Average subducted volume (km^3/km/yr)')
+legend('Full trench: 41^\circ - 49^\circ N',"Southern segment: 41^\circ - 45.5^\circ N","Northern segment: 45.5^\circ - 49^\circ N",'location','northwest')
+
+%% make Time history plot 21
+nb=21;
+tv=linspace(0,2.5e6,nb);
+dt=tv(2)-tv(1);
+t=[];
+diff=[];
+d_25=[];
+[~, n1, ~] = deg2utm(42, 127);
+[~, n2, ~] = deg2utm(45.5, 127);
+[~, n3, ~] = deg2utm(49, 127);
+
+for i=1:nb-1
+    t(i)=mean([tv(i), tv(i+1)]);
+    in=find(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)));
+    in2=find(and(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)),and(Out.trench_y>n1,Out.trench_y<=n2)));
+    in3=find(and(and(and(time>=tv(i),time<tv(i+1)),~isnan(FS.Z-CAS.Z)),and(Out.trench_y>n2,Out.trench_y<=n3)));
+    diff(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*40e-3*1.2;
+    diff_s(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*40e-3*1.2;
+    diff_n(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*40e-3*1.2;
+
+    diff2(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*40e-3*2.2;
+    diff_s2(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*40e-3*2.2;
+    diff_n2(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*40e-3*2.2;
+
+    % diff(i)=mean(FS.Z(in)-CAS.Z(in),'omitnan')*1e-3*40e-6;
+    % diff_s(i)=mean(FS.Z(in2)-CAS.Z(in2),'omitnan')*1e-3*40e-6;
+    % diff_n(i)=mean(FS.Z(in3)-CAS.Z(in3),'omitnan')*1e-3*40e-6;
+
+end
+
+figure; hold on
+% plot(t,d_25)
+% plot(t,d_75)
+t=t/1e6;
+fill([t fliplr(t)],[diff fliplr(diff2)],'b',FaceAlpha=0.5)
+fill([t fliplr(t)],[diff_s fliplr(diff_s2)],[1,0.8,0.8],FaceAlpha=0.8)
+fill([t fliplr(t)],[diff_n fliplr(diff_n2)],[0.8,0.8,0.8],FaceAlpha=0.5)
+
+xlabel('Time before present (Ma)')
+ylabel('Average subducted mass (kT/km/yr)')
+legend('Full trench: 41^\circ - 49^\circ N',"Southern segment: 41^\circ - 45.5^\circ N","Northern segment: 45.5^\circ - 49^\circ N",'location','northwest')
 %% Gravity 
 BG=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Gravity/Bouguer_UTM10m2.tif');
 BG=crop(BG,domainx,domainy);
