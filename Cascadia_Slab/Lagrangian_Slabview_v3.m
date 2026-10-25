@@ -271,8 +271,8 @@ for i=1:n
         g_mn=smoothdata(b(:,7)','gaussian',5);
         g_mx=smoothdata(b(:,6)','gaussian',5);
 
-        nin=find(g~=0);
-        g=smoothdata(g(nin),'gaussian',5);
+        nin=find(g_mn~=0);
+        g_mn=smoothdata(g_mn(nin),'gaussian',5);
    
         fill([lat(nin), fliplr(lat(nin))],[g_mx, fliplr(g_mn)],cmap(i,:),'FaceAlpha',0.8)
        
@@ -328,7 +328,7 @@ KG=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Resear
 K2=crop(K2,domainx,domainy);
 K1=crop(K1,domainx,domainy);
 KG=crop(KG,domainx,domainy);
-
+BGr=resample(BG,S2);
 BGD=BGr;
 BGD.Z=(log(BGr.Z)-p(2))./p(1);
 
@@ -348,15 +348,16 @@ bc=bin(Out_S.trench_y(in),Out_S.trench_x(in),nb);
 
 k1=b1(:,2);
 k2=b2(:,2);
+kg=bg(:,2);
 s2=bs2(:,2);
 bgs2=bgs2(:,2);
 nin=find(k2~=0);
 
 figure; hold on
-% plot(lat(nin),k1(nin))
+plot(lat(nin),kg(nin))
 % plot(lat(nin),k2(nin))
-plot(lat(nin),s2(nin))
-plot(lat(nin),-bgs2(nin))
+% plot(lat(nin),s2(nin))
+% plot(lat(nin),-bgs2(nin))
 
 %%
 BGr=resample(BG,S2);
@@ -368,3 +369,12 @@ d=linspace(0,1.5e4,10);
 figure; hold on
 scatter(abs(S2.Z(in)),log(BGr.Z(in)))
 plot(d,d.*p(1)+p(2))
+
+%% Generate shapefiles of swaths
+D=Out.dist;
+in=find(and(D.Z>7e4,D.Z<=8e4));
+D5=D;
+D5.Z=zeros(size(D.Z));
+D5.Z(in)=1;
+[MS,~,~] = GRIDobj2polygon(D5);
+shapewrite(MS, '/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Shapefiles/70to80km_swath.shp');
