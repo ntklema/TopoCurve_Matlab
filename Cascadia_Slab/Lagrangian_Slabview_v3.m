@@ -15,7 +15,7 @@ domainy=CAS.georef.YWorldLimits;
 % 
 % FS=resample(FS,DEM,'bilinear');
 % CAS=resample(CAS,DEM,'bilinear');
-% S2 = GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Slab2_UTM10N.tif');
+S2 = GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Slab2_UTM10N.tif');
 % CAS = resample(CAS, S2, 'bilinear');
 % FS = resample(FS, S2, 'bilinear');
 % S2=resample(S2,DEM,'bilinear');
@@ -378,3 +378,14 @@ D5.Z=zeros(size(D.Z));
 D5.Z(in)=1;
 [MS,~,~] = GRIDobj2polygon(D5);
 shapewrite(MS, '/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Shapefiles/70to80km_swath.shp');
+
+%% Curvature of continental slope
+DEMc=resample(DEM,S2);
+DEMc=crop(DEMc,[1e5,5e5],[4.5e6,5.6e6]);
+
+%%
+C=CurveObj(DEMc);
+C=SpecFilt(C,[40000,50000],'lowpass');
+
+%
+C=CurveCalc(C,0);
