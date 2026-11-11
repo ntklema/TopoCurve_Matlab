@@ -34,8 +34,8 @@
            if isa(DEM,'GRIDobj')
                obj.DEM=struct('FullExtent',[],'X',[],'Y',[],'Z',[],'georef',[],'dx',[],'dy',[],'DTPlane',[],'Zmn',[],'ZFilt',[],'ZDiff',[]);
                
-               X=DEM.georef.XWorldLimits;
-               Y=DEM.georef.YWorldLimits;
+               X=DEM.georef.SpatialRef.XWorldLimits;
+               Y=DEM.georef.SpatialRef.YWorldLimits;
                georef=[X,Y];
                
 
@@ -331,6 +331,10 @@
             obj.CMAP.KG=KG; obj.CMAP.KM=KM;
             obj.CMAP.K1=K1; obj.CMAP.K2=K2;
 
+            % Calculate contour and profile curvatures
+            
+            obj.CMAP.k_c=(-e.*SZV.^2+2.*f.*SZU.*SZV-g.*SZU.^2)./(E.*SZV.^2-2.*F.*SZU.*SZV+G.*SZU.^2);
+            obj.CMAP.k_p=2.*KM-obj.CMAP.k_c;
 
             % Store slope vectors form filtered topographic map
             [obj.DEM.GU, obj.DEM.GV]=gradient(obj.DEM.ZFilt,obj.DEM.dx, obj.DEM.dy);

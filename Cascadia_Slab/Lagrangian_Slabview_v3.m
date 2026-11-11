@@ -6,8 +6,8 @@ FS=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Resear
 
 BG=GRIDobj('/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Research_Projects/Cascadia_Slab/GIS/Rasters/Gravity/Bouguer_UTM10m2.tif');
 
-domainx=CAS.georef.XWorldLimits;
-domainy=CAS.georef.YWorldLimits;
+domainx=CAS.georef.SpatialRef.XWorldLimits;
+domainy=CAS.georef.SpatialRef.YWorldLimits;
 % DEM=resample(DEM,BG,'bilinear');
 % FS = resample(FS, S2, 'bilinear');
 % CAS = resample(CAS, S2, 'bilinear');
@@ -381,11 +381,15 @@ shapewrite(MS, '/Users/ntklema/Library/CloudStorage/OneDrive-FortLewisCollege/Re
 
 %% Curvature of continental slope
 DEMc=resample(DEM,S2);
-DEMc=crop(DEMc,[1e5,5e5],[4.5e6,5.6e6]);
+% DEMc=crop(DEMc,[1e5,5e5],[4.5e6,5.6e6]);
 
 %%
 C=CurveObj(DEMc);
-C=SpecFilt(C,[40000,50000],'lowpass');
-
+C.DEM.ZFilt=imgaussfilt(C.DEM.Z,1.5);
+% C=SpecFilt(C,[40000,50000],'lowpass');
+figure
 %
 C=CurveCalc(C,0);
+
+figure
+imagesc(C.CMAP.k_c)
