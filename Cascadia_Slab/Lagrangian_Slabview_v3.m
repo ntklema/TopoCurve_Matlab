@@ -393,3 +393,4 @@ C=CurveCalc(C,0);
 
 figure
 imagesc(C.CMAP.k_c)
+
